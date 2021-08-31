@@ -15,7 +15,7 @@ Install the dependencies and devDependencies and start the server.
 
 ```bash
 git clone https://github.com/DarkTangent01/e-commerce.git
-cd notes
+cd E-commerce
 npm install
 npm start
 ```

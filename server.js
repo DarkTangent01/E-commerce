@@ -1,11 +1,19 @@
 const express = require('express');
 const morgan = require('morgan');
+const http = require('http');
+const https = require('https');
 const cors = require('cors');
 const bodyparser = require('body-parser');
 const httpLogger = require('./httpLogger/httplogger');
+const fs = require('fs');
 const app = express();
 const connectDB = require('./config/db');
 
+
+// HTTPS Private key and certificate
+const PrivateKey = fs.readFileSync('certificates/key.pem', 'utf8');
+const certificate = fs.readFileSync('certificates/cert.pem', 'utf8');
+const credentials = {key: PrivateKey, cert: certificate};
 
 
 require('dotenv').config({
@@ -13,7 +21,6 @@ require('dotenv').config({
 });
 
 // MongoDB
-
 connectDB();
 
 // app.use(express.urlencoded({ extended: true }));
@@ -41,8 +48,17 @@ app.use((req, res) => {
 });
 
 const PORT = process.env.PORT;
+const SSL_PORT = process.env.SSL_PORT;
 const IP_ADDRESS = process.env.IP_ADDRESS;
 
-app.listen(PORT, () => {
+const httpServer = http.createServer(app);
+const httpsServer = https.createServer(credentials, app);
+
+
+httpServer.listen(PORT, () => {
     console.log(`Server is running on http://${IP_ADDRESS}:${PORT}/`);
+});
+
+httpsServer.listen(SSL_PORT, () => {
+    console.log(`Server is running on https://${IP_ADDRESS}:${SSL_PORT}/`);
 });

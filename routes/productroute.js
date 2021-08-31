@@ -5,7 +5,9 @@ const auth = require('../middleware/auth');
 const authadmin = require('../middleware/adminauth');
 const productById = require('../middleware/productId');
 const formidable = require('formidable');
+const _ = require('loadsh');
 const fs = require('fs');
+const adminauth = require('../middleware/adminauth');
 
 
 
@@ -94,6 +96,48 @@ router.get('/photo/:productId', productById, (req, res) => {
     });
 });
 
+
+/* @route PUT api/product/:productId
+   @ desc update Single product
+   @ access private Admin
+*/
+
+router.put('/:productId', auth, adminauth, productById, (req, res) => {
+    let form = new formidable.IncomingForm();
+    form.keepExtensions = true;
+    form.parse(req, async(err, fields, files) => {
+        if (err) {
+            return res.status(400).json({
+                error: 'Image could not be uploaded',
+            });
+        }
+
+        let product = req.product;
+        product = _.extend(product, fields);
+
+        if (files.photo) {
+            if (files.photo.size > 1000000){
+                return res.status(400).json({
+                    error: 'Image should be less than 1mb in size',
+                });
+            }
+
+            product.photo.data = fs.readFileSync(files.photo.path);
+            product.photo.contentType = files.photo.type;
+        }
+
+        try {
+            let productDetails = await product.save();
+            productDetails.photo = undefined;
+            res.json(productDetails);
+        } catch (error) {
+            console.log(error);
+            res.status(500).send('Server error');
+        }
+    });
+});
+
+router.param("productId", productById);
 
 
 module.exports = router;
